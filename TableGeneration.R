@@ -1,27 +1,47 @@
 
 
 #Generates the table output from the tukey test
-GenTukeyTable <- function(tukeylist)
+GenTukeyTable <- function(tukeylist, CL = FALSE)
 {
-  tresult <- data.frame(Protein = NA, Comparison = NA, mean = NA, StdError = NA, zvalue = NA,  pval = NA)
-  
+  if(CL)
+  {
+    tresult <- data.frame(Protein = NA, Comparison = NA, mean = NA, StdError = NA, lwr = NA,  upr = NA, pval = NA)
+  }
+  else
+  {
+    tresult <- data.frame(Protein = NA, Comparison = NA, mean = NA, StdError = NA, zvalue = NA,   pval = NA)
+  }
   temp <- lapply_pb(tukeylist, summary)
   tukeyNames <- names(temp[[1]]$test$coefficients)
+  tester = 0
   for(i in names(temp))
   {
+    tukeyNames <- names(temp[[i]]$test$coefficients)
     pcount = 1
     for(j in tukeyNames)
     {
-      tresult <- rbind(tresult, c(i, j, temp[[i]]$test$coef[j][[1]], 
-                                  temp[[i]]$test$sigma[j][[1]],
-                                  temp[[i]]$test$tstat[j][[1]],
-                                  temp[[i]]$test$pvalues[[pcount]]))
+      if(CL){
+        tt <- confint(temp[[i]])
+        tresult <- rbind(tresult, c(i,j, temp[[i]]$test$coef[j][[1]],
+          temp[[i]]$test$sigma[j][[1]],
+          tt$confint[pcount, 2],
+          tt$confint[pcount, 3],
+          temp[[i]]$test$pvalues[[pcount]]))
+      }
+      else{
+        tresult <- rbind(tresult, c(i, j, temp[[i]]$test$coef[j][[1]], 
+                                    temp[[i]]$test$sigma[j][[1]],
+                                    temp[[i]]$test$tstat[j][[1]],
+                                    temp[[i]]$test$pvalues[[pcount]]))
+      }
       pcount= pcount+1
     }
+    
   }
   tresult <- na.omit(tresult)
   return(tresult)
 }
+
 
 
 #prints out the results of applying an anova test
