@@ -23,7 +23,7 @@ QuickHeatMap <- function(mydata, myorder = NULL)
   require(ggplot2)
   data.m <- ddply(mydata, .(Peptide), transform, rescale = rescale(value))
   p <- ggplot(data.m, aes(Alias, Peptide)) + geom_tile(aes(fill = rescale),colour = "white")
-  p + scale_fill_gradient(low = "white", high = "steelblue")
+  p + scale_fill_gradient(low = "white", high = "steelblue") +  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 }
 
 #Generates a nicely formatted volcano plot
