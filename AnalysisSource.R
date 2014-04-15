@@ -26,6 +26,17 @@ PoolRefNorm <- function(indata, alias, ref = "ref")
   return(outdata)
 }
 
+CorrectZeros <- function(T_Data, T_Alias)
+{
+  kk <- as.character(unique(T_Alias$Sample))
+  for(i in kk)
+  { 
+    xx <- c(as.character(T_Alias[T_Alias$Sample == i, "Alias"]))
+    T_Data[which(apply(T_Data[,xx], 1, function(x) {sum(x, na.rm = TRUE)==0})),xx] <- NA
+  }
+  return(T_Data)
+}
+
 #No longer used.  Normalize the reporter ions to the pooled reference
 PoolNormalize <- function (T_In,poolColumn, colsToNormalize) {
   for(i in 1:nrow(T_PepNorm))
