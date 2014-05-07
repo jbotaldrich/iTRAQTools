@@ -1,0 +1,371 @@
+\documentclass{article}
+\usepackage{longtable}
+\usepackage[utf8]{inputenc} % set input encoding (not needed with XeLaTeX)
+
+%%% Examples of Article customizations
+% These packages are optional, depending whether you want the features they provide.
+% See the LaTeX Companion or other references for full information.
+
+%%% PAGE DIMENSIONS
+\usepackage{geometry} % to change the page dimensions
+\geometry{a4paper} % or letterpaper (US) or a5paper or....
+% \geometry{margin=2in} % for example, change the margins to 2 inches all round
+% \geometry{landscape} % set up the page for landscape
+%   read geometry.pdf for detailed page layout information
+
+\usepackage{graphicx} % support the \includegraphics command and options
+\usepackage[T1]{fontenc}
+% \usepackage[parfill]{parskip} % Activate to begin paragraphs with an empty line rather than an indent
+
+%%% PACKAGES
+\usepackage{booktabs} % for much better looking tables
+\usepackage{array} % for better arrays (eg matrices) in maths
+\usepackage{paralist} % very flexible & customisable lists (eg. enumerate/itemize, etc.)
+\usepackage{verbatim} % adds environment for commenting out blocks of text & for better verbatim
+\usepackage{subfig} % make it possible to include more than one captioned figure/table in a single float
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{pgfplotstable}
+\usepackage{longtable}
+\usepackage{tabu}
+\pgfplotstableset{col sep=tab, precision = 2, fixed zerofill}
+%\usepackage{caption,subcaption}
+% These packages are all incorporated in the memoir class to one degree or another...
+
+%%% HEADERS & FOOTERS
+\usepackage{fancyhdr} % This should be set AFTER setting up the page geometry
+\pagestyle{fancy} % options: empty , plain , fancy
+\renewcommand{\headrulewidth}{0pt} % customise the layout...
+\lhead{}\chead{}\rhead{}
+\lfoot{}\cfoot{\thepage}\rfoot{}
+
+%%% SECTION TITLE APPEARANCE
+\usepackage{sectsty}
+\allsectionsfont{\sffamily\mdseries\upshape} % (See the fntguide.pdf for font help)
+% (This matches ConTeXt defaults)
+
+%%% ToC (table of contents) APPEARANCE
+\usepackage[nottoc,notlof,notlot]{tocbibind} % Put the bibliography in the ToC
+\usepackage[titles,subfigure]{tocloft} % Alter the style of the Table of Contents
+\renewcommand{\cftsecfont}{\rmfamily\mdseries\upshape}
+\renewcommand{\cftsecpagefont}{\rmfamily\mdseries\upshape} % No bold!
+%%% END Article customizations
+\title{Data Analysis of {\it Mortierella elongata} cell pellet and supernatant in the presence and absence of bacteria}
+\author{Data Analysis: Joshua Aldrich \\Sample Prep: Carrie Nicora\\
+Environmental Molecular\\
+Sciences Laboratory}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Data Analysis Steps}
+%\catcode`\_=12
+%\pgfplotstableread{data_package_dataset.txt}\loadedtable
+%\begin{table}[H]
+%\begin{center}
+%\caption{Datasets Generated}
+%\pgfplotstabletypeset[
+%font={\small},
+%    every head row/.style={before row=\toprule, after row=\midrule},
+%  every last row/.style={after row=\bottomrule}, 
+%  string type,
+%  columns={Experiment, Created,  Scan Count}]\loadedtable
+%\end{center}
+%\end{table}
+%\catcode`\_=8
+
+\begin{enumerate}
+	\item Dataset generated from QExactive was searched using MSGF+ database search engine with a parameter file having dynamic oxidation on methionine and static iTRAQ 4-plex modificaton in target decoy mode. 
+%\begin{figure}[H]
+%  \center{\includegraphics[width=1\textwidth]{Capture.png}
+%  \label{fig:psm}
+%  \caption{DMS Data Package}}
+%\end{figure}
+\item Reporter ion intensities were collected using MASIC.
+\item Results of searches and MASIC were processed through MAC (Multiple Analysis Chain) pipeline to aggregate, filter and generate crosstab results for processing.  Redundant peptide identifications had reporter ion intensities summed for a unique peptide result.
+\item RStudio running R version 3.0.2 was used to analyze the results.
+\begin{enumerate}
+\item Normalized for channel bias using median Centeral tendency of the global dataset.
+\item Applied lmer Robust linear regression using the model:
+\begin{align*}
+y &= \mu + \alpha_i + \beta_i + p_{ij} + \epsilon{ijk}\\
+\mu &= \text{intercept}\\
+\alpha &= \text{Sample Type; pellet, supernatant}\\
+\beta &= \text{Treatment; +bacteria, -bacteria}\\
+p &= \text{Peptide Random effect}\\
+\epsilon &= \text{Random Error}
+\end{align*}
+\item Tested for significance of the treatment and sample type effect.  P-value corrected using Benjamini-Hochberg correction. 
+\item Results are exported to tab delimited text and figures exported to png.
+\end{enumerate}
+\end{enumerate}
+Directory sturcture explained:
+\begin{enumerate}
+\item Output:
+\begin{enumerate}
+\item NormalizedPeptides.txt, Normalized peptide intensities.
+\item SignificanceResults.txt, Relative protein abundance table with confidence intervals and p-values for significance of the change between samples.  
+\item IdentificationTable.txt, Summary of peptides/proteins identified.
+\item ProteinAbundanceTable.txt, Summary peptide/protein relative abundances with confidence intervals.
+\end{enumerate}
+\item Data:
+\begin{enumerate}
+\item T\_Alias.txt, Experimental design
+\item T\_Data.txt, output of MAC pipeline of peptide quantitation
+\item T\_Factors.txt, Table associating dataset to sample group
+\item T\_Filtered\_Results.txt, 1\% FDR filtered peptides and scan information
+\item T\_Precursor\_Interference\_Typed.txt, file containing the percent purity of peptides sent for fragmentation
+\item T\_Row\_Metadata.txt, table mapping peptide sequences to proteins
+\end{enumerate}
+\item R
+\begin{enumerate}
+\item AnalysisSource.R, all the functions associated with normalization manipulation and hypothesis testing
+\item Utilities.R, File IO tools
+\item PlotUtils.R, functions for exporting plots to png
+\item TableGeneration.R, aggregates information into a table format.
+\item dlplyfunctions.R, Some helper functions for dlply.
+\end{enumerate}
+\item Doc
+\begin{enumerate}
+\item ingeldigest, tex file which is generating this document
+\item mybib.bib, bibliography for this study
+\end{enumerate}
+\end{enumerate}
+
+
+<<setup, cache=FALSE, include=FALSE>>=
+opts_knit$set(progress = TRUE, verbose = TRUE)
+@
+
+
+<<ImportDataAndLibrary, cache=TRUE, echo=FALSE, message=FALSE>>=
+setwd("~/2014/Mort")
+
+#Load necessary functions
+source("R/AnalysisSource.R", echo = FALSE)
+source("R/Utilities.R", echo = FALSE)
+source("R/PlotUtils.R", echo = FALSE)
+source("R/TableGeneration.R", echo = FALSE)
+source("R/dlplyfunctions.R", echo = FALSE)
+source("R/test.R", echo = FALSE) 
+require(xtable)
+require(lme4)
+require(car)
+require(gplots)
+library(xtable)
+
+T_filtered <- read.delim("Data/T_Filtered_Results.txt")
+T_Data <- read.delim("Data/T_Data.txt", check.names=FALSE)
+T_Data <- data.frame(T_Data[,2:ncol(T_Data)], row.names = T_Data$Peptide, check.names = FALSE)
+T_Row_Metadata <- read.delim("Data/T_Row_Metadata.txt")
+t_alias <- read.delim("Data/t_alias.txt")
+
+
+T_RowC <- T_Row_Metadata
+T_PepQuant <- T_Data
+T_Alias <- t_alias
+outdir_ext = "All"
+T_Data <- CorrectZeros(T_Data, T_Alias)
+@
+
+<<expDesign, results='asis', echo=FALSE, message=FALSE, warning=FALSE>>=
+require(xtable)
+x.big <- xtable(t_alias, caption = "Experimental Design", label = "Exp_Table")
+print(x.big, tabular.environment='longtable', floating=FALSE, include.rownames= FALSE)
+@
+
+<<peptideplot,cache=TRUE, echo=FALSE, eval=TRUE>>=
+for(i in as.character(unique(t_alias$Sample))){ 
+print(PairPlot(T_PepQuant[,as.character(t_alias[t_alias$Sample == i, "Alias"])], issaved = FALSE))
+}
+@
+
+<<unnormalized, cache=TRUE, echo=FALSE>>= 
+#Normalize and plot the normalization steps of the data
+ 
+T_RowQ <- subset(T_RowC, T_RowC$Peptide %in% rownames(T_PepQuant))
+T_PepNorm <- T_PepQuant
+
+#Normalize by median
+for(i in as.character(unique(t_alias$Sample))){
+print(NormPlot(log(T_PepQuant[,as.character(t_alias[t_alias$Sample == i, "Alias"])],2), figpath, filename = "Original",issaved = FALSE))
+}
+@
+
+
+
+
+<<normalized,echo=FALSE, cache=TRUE>>=
+T_PepNorm <- MedNorm(T_PepNorm)
+for(i in as.character(unique(t_alias$Sample))){
+NormPlot(log(T_PepNorm[,as.character(t_alias[t_alias$Sample == i, "Alias"])],2), figpath, "Unbiased",issaved = FALSE)
+}
+T_PepNorm <- log(T_PepNorm, 2) 
+@
+
+
+<<meltpeptides, echo=FALSE, cache=TRUE>>= 
+T_Meltees <- list() 
+for(i in as.character(unique(T_Alias$Sample))){
+  T_Meltees[[i]] <- T_PepNorm[,T_Alias[T_Alias$Sample==i,"Alias"]]
+}
+
+T_Meltees <- mymelter(T_Meltees, T_RowQ, T_Alias)
+
+
+for(i in names(T_Meltees))
+{
+T_Meltees[[i]] <- dlply(T_Meltees[[i]], .(Protein), failwith(NULL, function(df){
+    if(length(unique(df$Peptide))>1)
+    {
+      df$Alias <- factor(df$Alias)
+      df$Peptide <- factor(df$Peptide)
+      return(lmer(value ~ Treatment + Type + (1|Peptide) + (1|Alias), data = df))
+    }
+    return(NULL)}
+    , quiet =TRUE), .progress = "tk")
+
+T_Meltees[[i]] <- compact(T_Meltees[[i]])
+}
+
+
+@
+
+<<ProteinData, cache=TRUE, echo=FALSE>>=
+T_Finals <- list()
+T_Model.Protein <- list()
+T_Model.Anova <- list()
+for(i in names(T_Meltees))
+{
+  T_Model <- T_Meltees[[i]] 
+  cc <- names(fixef(T_Model[[2]]))
+  mycoeff <- get_coeffs(cc)
+  T_Model.Protein[[i]] <- ldply(T_Model, failwith(NULL, mycoeff, quiet = TRUE), .progress = "tk")
+ 
+  T_Model.Anova[[i]] <- ldply(T_Model, failwith(NULL, getAnova, quiet = TRUE), .progress = "tk")
+  temp <- melt(confint(T_Model[[1]], method = "Wald"))
+  temp <- paste(temp$Var1, temp$Var2, sep = "_")
+  myconfs <- getconfint(temp)
+  T_Model.conf <- ldply(T_Model, failwith(NULL, myconfs, quiet = TRUE), .progress = "tk")
+  T_Model.Anova[[i]]$padj <- p.adjust(T_Model.Anova[[i]][,'Pr(>Chisq)'])
+FinalResult <- merge(merge(T_Model.Protein[[i]], T_Model.conf, by = ".id"), T_Model.Anova[[i]], by = ".id") 
+colnames(FinalResult)[which(colnames(FinalResult) == ".id")] <- "Protein"
+  T_Finals[[i]] <- FinalResult
+  
+  xx <- FinalResult[FinalResult$padj < 0.05,]
+  xx <- as.character(unique(FinalResult$Protein))
+  
+}  
+@
+
+<<IDREsults, results='asis',echo=FALSE, cache=TRUE>>=
+require(sqldf) 
+protcounter <- vector()
+sigprotcounter <- vector()
+for(i in names(T_Finals)) 
+{
+
+  FinalResult <- T_Finals[[i]]
+  protcounter <- c(protcounter, sqldf("SELECT Protein FROM FinalResult GROUP BY Protein")[,1])
+  sigprotcounter <- c(sigprotcounter, sqldf("SELECT Protein FROM FinalResult GROUP BY Protein Having padj < 0.05")[,1])  
+}
+
+
+idresults <- data.frame(Identifications = c("PSMs", "Unique Peptides", "Proteins", "Quantifiable Proteins", "Significant Proteins"), Count = c(
+  sqldf("SELECT COUNT(Peptide) FROM T_filtered")[1,1],
+sqldf("SELECT COUNT(Peptide) FROM T_Row_Metadata")[1,1],
+sqldf("SELECT COUNT(ACK.Protein) FROM (SELECT Protein, COUNT(Peptide) PepCount FROM T_Row_Metadata GROUP BY Protein) ACK WHERE ACK.PepCount > 1")[1,1],
+length(unique(protcounter)),
+length(unique(sigprotcounter))
+))
+  require(xtable, quietly = TRUE)
+print(xtable(idresults, caption = "Identification Table", label = "ID_Table"),include.rownames = FALSE)
+ 
+@
+
+
+<<meltpeptides2, echo=FALSE, cache=TRUE>>= 
+T_Meltees2 <- list() 
+for(i in as.character(unique(T_Alias$Sample))){
+  T_Meltees2[[i]] <- T_PepNorm[,T_Alias[T_Alias$Sample==i,"Alias"]]
+}
+
+T_Meltees2 <- mymelter(T_Meltees2, T_RowQ, T_Alias)
+
+
+for(i in names(T_Meltees2))
+{
+T_Meltees2[[i]] <- dlply(T_Meltees2[[i]], .(Protein), failwith(NULL, function(df){
+    if(length(unique(df$Peptide))>1)
+    {
+      df$Alias <- factor(df$Alias) 
+      df$Peptide <- factor(df$Peptide)
+      return(lmer(value ~ Alias -1 + (1|Peptide), data = df))
+    }
+    return(NULL)}
+    , quiet =TRUE), .progress = "tk")
+
+T_Meltees2[[i]] <- compact(T_Meltees2[[i]])
+}
+@
+
+<<ProteinData2, cache=TRUE, echo=FALSE>>=
+T_Finals2 <- list()
+T_Model2.Protein <- list()
+T_Model2.Anova <- list()
+for(i in names(T_Meltees))
+{ 
+  T_Model2 <- T_Meltees2[[i]] 
+  cc <- names(fixef(T_Model2[[2]]))
+  mycoeff <- get_coeffs(cc)
+  T_Model2.Protein[[i]] <- ldply(T_Model2, failwith(NULL, mycoeff, quiet = TRUE), .progress = "tk")
+  
+  
+  colnames(T_Model2.Protein[[i]])[2] <- "AliasB-P"
+ 
+  T_Model2.Anova[[i]] <- ldply(T_Model2, failwith(NULL, Anova, quiet = TRUE), .progress = "tk")
+  temp <- melt(confint(T_Model2[[1]], method = "Wald"))
+  temp <- paste(temp$Var1, temp$Var2, sep = "_")
+  myconfs <- getconfint(temp)
+  T_Model2.conf <- ldply(T_Model2, failwith(NULL, myconfs, quiet = TRUE), .progress = "tk")
+  T_Model2.Anova[[i]]$padj <- p.adjust(T_Model2.Anova[[i]][,'Pr(>Chisq)'])
+FinalResult2 <- merge(merge(T_Model2.Protein[[i]], T_Model2.conf, by = ".id"), T_Model2.Anova[[i]], by = ".id") 
+colnames(FinalResult2)[which(colnames(FinalResult2) == ".id")] <- "Protein"
+  T_Finals2[[i]] <- FinalResult2
+}  
+@
+
+
+<<HeatmapAll, echo=FALSE, cache=TRUE>>=
+require(gplots)   
+for(i in names(T_Model2.Protein)){ 
+heatmap.2(as.matrix(T_Model2.Protein[[i]][,2:ncol(T_Model2.Protein[[i]])]), scale = "row", trace = "none")
+}
+@ 
+
+
+<<HeatmapSig, echo=FALSE, cache=TRUE>>=
+require(gplots)   
+for(i in names(T_Model2.Protein)){
+heatmap.2(as.matrix(T_Model2.Protein[[i]][T_Model2.Protein[[i]]$.id %in% as.character(unique(T_Model.Anova[[i]][T_Model.Anova[[i]]$padj < 0.05, ".id"])),2:ncol(T_Model2.Protein[[i]])]), scale = "row", trace = "none")
+}
+@
+
+<<TableWrite, echo=FALSE, cache=TRUE>>= 
+NormPepTable <- merge(T_Row_Metadata, T_PepNorm, by.x = "Peptide", by.y = "row.names")
+outlist <- list("NormalizedPeptides" = NormPepTable, "IdentificationTable" = idresults)
+for(i in names(T_Finals)){  
+  outlist[[i]] <- T_Finals[[i]]
+}
+
+outlist[["ProteinAbundance"]] <- T_Finals2[[1]]
+
+WriteTables(outlist ,paste("output", outdir_ext, sep="/")) 
+@
+
+\nocite{*}
+\bibliographystyle{plain}
+\bibliography{mybib}
+
+\end{document}
