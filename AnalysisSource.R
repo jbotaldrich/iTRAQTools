@@ -13,11 +13,11 @@ library(fastmatch)
 PoolRefNorm <- function(indata, alias, ref = "ref")
 {
   outdata <- indata
-  for(i in unique(alias$Sample))
+  for(i in as.character(unique(alias$Sample)))
   {
-    refvar <- alias[alias$Sample == i,]$Alias
+    refvar <- as.character(alias[alias$Sample == i,]$Alias)
     refs <- grep(ref, refvar)
-    refmean <- apply(as.matrix(outdata[,refvar[refs]]), 1, mean)
+    refmean <- apply(outdata[,refvar[refs]], 1, mean)
     for( j in refvar)
     {
       outdata[,j] <- outdata[,j] / refmean
@@ -53,7 +53,7 @@ PoolNormalize <- function (T_In,poolColumn, colsToNormalize) {
 MedNorm <- function(mydf)
 {
  # mydf <- mydf[apply(mydf, 1, function(x){all(x != 0) && all(!is.na(x))}),]
-  mydf[,1:ncol(mydf)] <- apply(mydf, 2, function(x){x / median(x, na.rm = TRUE)})
+  mydf[,1:ncol(mydf)] <- apply(as.matrix(mydf), 2, function(x){x / median(x, na.rm = TRUE)})
   return(mydf)
 }
 
@@ -68,16 +68,20 @@ ProteinQuant <- function (Tdata, Trow) {
   return(T_ProtTab)
 }
 
+RemoveInfinite <- function(myDT)
+{
+  is.na(myDT) <- sapply(myDT, is.infinite)
+  return(myDT)
+}
 
 #Melts the dataset and connects the row metadata for later 
-#processing
+#processing assumes infinities have been removed.
 PepProtMelter <- function(T_Data, T_Row)
 {
   require(reshape2)
   T_Data <- cbind(T_Data, Peptide = rownames(T_Data))
   tempData <- merge(T_Data, T_Row, by.x = "Peptide", by.y = "Peptide")
   melt_T_Data <- melt(tempData, id = c("Protein", "Peptide","MultiProtein"))
-  melt_T_Data[is.infinite(melt_T_Data$value), "value"] <-NA
   return(melt_T_Data)
 }
 
